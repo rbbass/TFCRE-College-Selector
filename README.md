@@ -1,0 +1,85 @@
+# TFCRE College Selector
+
+A single-page tool for exploring how a university's academic departments could be regrouped into six new colleges. You load a spreadsheet of departments and their data, rate how closely departments relate to one another, then build, score and compare college plans.
+
+Everything runs in the browser. There is no server and no build step, and nothing leaves your machine unless you save a file.
+
+## Running it
+
+- Open `index.html` in a browser, or
+- Publish it with GitHub Pages (Settings, Pages, deploy from the `main` branch, root folder).
+
+The page loads the SheetJS library from cdnjs to read Excel files, so it needs internet access the first time it opens.
+
+## Input file
+
+Upload an Excel file (`.xlsx`, `.xls`) or a `.csv`. The first sheet is used.
+
+| Column | Contents |
+|---|---|
+| A | Department (unit) name. Rows without a name are ignored. |
+| B | Current college (optional). Detected when the header contains "college", "school" or "division", or when most values are text. |
+| Remaining columns | Numbers: faculty counts, student credit hours (SCH), headcounts, research and financial figures, and so on. `$`, `,` and `%` are handled; blanks count as missing. |
+
+The page opens with a small built-in sample so you can try it before loading real data.
+
+Some calculated columns are added when matching headers are present:
+
+- **Total faculty**: headers containing "Faculty TT", "NTTF" and "Faculty PT".
+- **SCH per FT faculty**: a header containing "SCH", plus TT and NTTF faculty.
+- **Research exp. per TT faculty**: headers containing "Research Exp" and "Faculty TT".
+
+Text in parentheses in a header is dropped from the display name.
+
+## What it does
+
+### Design colleges tab
+- Drag departments from the unassigned pool into six colleges (or tap a department, then tap a college). Rename a college by editing its title.
+- Departments are color-coded by their current college.
+- A summary table shows the sum of every column for each new college, plus the affinity kept inside each college.
+- **Suggest from affinity** groups the departments automatically to keep high-affinity departments together. Options: how even the college sizes must be, an optional financial balance (keep each college's total for a chosen column within a tolerance of the average), and whether to keep departments you have already placed. **Undo suggestion** restores the previous arrangement.
+- **Load a stored plan** opens a plan CSV as the working arrangement.
+- **Plans**: save the current arrangement, tick two or more plans to compare them on any column (balance table and side-by-side bars), and save each plan as its own CSV.
+
+### Department affinity tab
+- Pick a department, then drag every other department into one of four nested squares: little, some, moderate or high affinity (weights 0, 1, 4 and 8, used internally).
+- Departments that share a current college start at moderate affinity. A checkbox turns this default off. "Apply both ways" makes a rating symmetric.
+- Save and load the ratings as a CSV.
+
+## File formats
+
+**Affinities** (`department-affinities.csv`): one row per rated pair.
+
+```
+Department,Related department,Weight
+Biology,Chemistry,8
+```
+
+Weight is 0, 1, 4 or 8. The file includes the same-college defaults and any pairs you deliberately lowered to 0, so loading it recreates your ratings exactly. Loading replaces current ratings; **Undo load** restores them.
+
+**Plans** (one file per plan, `plan - <name>.csv`): one row per placed department, plus a row for each empty college so its name is kept.
+
+```
+Plan,Department,College number,College name
+Plan A,Biology,1,Natural Sciences
+Plan A,,2,College 2
+```
+
+College number is 1 to 6. Department names are matched to the loaded data ignoring capitalization. Files that hold several plans also load: "Add plan files" imports them all, and "Load a stored plan" uses the first.
+
+## Where data is kept
+
+Working state is saved in the browser's local storage, so it is private to one browser on one device: college assignments, saved plans, affinity ratings and the defaults setting. Clearing site data erases it. Use the CSV save buttons for backups and to share work with colleagues, who load the same Excel file and then your CSVs.
+
+## Data privacy
+
+Departmental financial and enrollment data can be sensitive. Do not commit your data files to this repository. The `.gitignore` excludes spreadsheets and a `data/` folder to help prevent that.
+
+## Development
+
+The whole app is `index.html`: markup, styles and script in one file, with no dependencies beyond SheetJS from a CDN. Edit it and reload.
+
+Notes for working on it:
+
+- Suggestions use a local search (random restarts plus perturbation) that maximizes within-college affinity under size limits, with a soft penalty for college totals outside the balance tolerance.
+- When the page is not hosted inside Claude, CSV saves use a normal browser download. Inside Claude's artifact viewer they go through the viewer's save prompt.

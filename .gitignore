@@ -1,0 +1,14 @@
+# Keep departmental data out of version control
+*.xlsx
+*.xls
+data/
+
+# Saved exports
+department-affinities*.csv
+plan - *.csv
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
